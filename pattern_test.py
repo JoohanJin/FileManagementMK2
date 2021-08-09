@@ -1,35 +1,33 @@
 from watchdog.observers import Observer
-from watchdog.events import PatternMatchingEventHandler
-import os, datetime, time, logging
+from watchdog.events import FileSystemEventHandler
+import logging, os, time, datetime
 
-folder_to_track = f"/home/joshep/Desktop/myFolder"
-folder_destination = f"/home/joshep/Desktop/testFolder"
 
-WATCH_PATTERN = ["*.py"]
-EXCEPTION_PATTERN = ["*.~"]
+folder_to_track = "/home/joshep/Desktop/myFolder"
+destination_folder = "/home/joshep/Desktop/testFolder"
 
-class MyHandler(PatternMatchingEventHandler):
-    def __init__(self):
-        super().__init__(patterns=WATCH_PATTERN, 
-                        ignore_patterns=EXCEPTION_PATTERN, 
-                        ignore_directories=False, 
-                        case_sensitive=True)
+WATCH_PATTERN = ('.pdf', '.doc', '.docx', '.csv', '.xml')
 
-    def on_modified(self, event):
-        for filename in os.listdir(folder_to_track): # for each file in the directory being watched
-            # check current time and add it to the file name
+class myHandler(FileSystemEventHandler):
+    def on_any_event(self, event):
+        for filename in os.listdir(folder_to_track):
             now = (datetime.datetime.now()).strftime("%Y_%m_%d %H_%M_%S")
             src = f"{folder_to_track}/{filename}"
-            dest = f"{folder_destination}/{now}_{filename}"
-            os.rename(src, dest)
-            logging.info(f"{src} has been changed to {dest}!")
+            if src.endswith(WATCH_PATTERN):
+                dest = f"{destination_folder}/{now}_{filename}"
+                os.rename(src, dest)
 
 
-event_handler = MyHandler()
+event_handler = myHandler()
 observer = Observer()
 logging.basicConfig(level=logging.INFO,
                     format="%(asctime)s-%(message)s",
                     datefmt="%Y-%m-%d %H-%M-%S")
+# schedule(event_handler, path, recursive = False)
+'''
+watching a path and calls appropriate methods specified in the given event handler in response
+to file system events.
+'''
 
 observer.schedule(event_handler, folder_to_track, recursive=True)
 observer.start()
